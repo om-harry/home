@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLOCKY - Simulasi Jam Analog Interaktif</title>
+    <!-- Tailwind CSS untuk Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Share Tech Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- FontAwesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(17, 24, 39, 0.9) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, rgba(30, 58, 138, 0.3) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(17, 24, 39, 0.9) 0, transparent 50%);
+        }
+        .tech-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/40 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-clock-rotate-left text-xl text-white animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 uppercase">CLOCKY</h1>
+                    <p class="text-xs text-slate-400 font-medium">Media Belajar & Simulasi Jam Analog Interaktif</p>
+                </div>
+            </div>
+            
+            <!-- Mode Selector -->
+            <div class="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800/80">
+                <button id="btn-mode-free" onclick="switchMode('free')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Putar Bebas
+                </button>
+                <button id="btn-mode-realtime" onclick="switchMode('realtime')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-clock"></i> Waktu Nyata
+                </button>
+                <button id="btn-mode-challenge" onclick="switchMode('challenge')" class="px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy"></i> Tantangan
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center flex-grow">
+        
+        <!-- Left Side: Analog Clock Panel -->
+        <div class="lg:col-span-7 flex flex-col items-center justify-center bg-slate-900/30 border border-slate-800/50 rounded-3xl p-6 sm:p-10 backdrop-blur-sm relative overflow-hidden group">
+            <!-- Decorative Light Effects -->
+            <div class="absolute -top-40 -left-40 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-40 -right-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <!-- Tip/Instruction -->
+            <div id="drag-hint" class="mb-6 px-4 py-2 rounded-full bg-cyan-950/40 border border-cyan-800/40 text-xs text-cyan-300 flex items-center gap-2 animate-bounce">
+                <i class="fa-solid fa-hand-pointer"></i> <span>Sentuh & seret ujung jarum jam untuk memutar!</span>
+            </div>
+
+            <!-- Clock Container -->
+            <div class="relative w-72 h-72 sm:w-96 sm:h-96 select-none touch-none">
+                <!-- Clock Shadow / Glow outer ring -->
+                <div class="absolute inset-0 rounded-full bg-slate-950 shadow-[0_0_50px_rgba(15,23,42,0.8),inset_0_0_20px_rgba(6,182,212,0.15)] border-4 border-slate-800/80"></div>
+                
+                <svg id="analog-clock" viewBox="0 0 400 400" class="w-full h-full relative z-10">
+                    <!-- Clock Face Markings -->
+                    <g id="ticks" class="stroke-slate-700 stroke-2"></g>
+                    <!-- Special Glowing Hour Marks -->
+                    <g id="hour-labels" class="fill-slate-400 font-semibold text-lg text-center" style="font-family: 'Inter', sans-serif;"></g>
+                    
+                    <!-- Center Pivot Base -->
+                    <circle cx="200" cy="200" r="14" class="fill-slate-900 stroke-slate-700 stroke-2" />
+
+                    <!-- Jarum Jam (Hour Hand) -->
+                    <g id="hour-hand-group" class="cursor-pointer">
+                        <line x1="200" y1="200" x2="200" y2="110" id="hour-hand" class="stroke-cyan-500 stroke-[10px]" stroke-linecap="round" />
+                        <!-- Hour Drag Handle Target -->
+                        <circle cx="200" cy="110" r="14" id="hour-handle" class="fill-cyan-400/20 stroke-cyan-400 stroke-2 opacity-0 hover:opacity-100 transition-opacity duration-200" />
+                    </g>
+
+                    <!-- Jarum Menit (Minute Hand) -->
+                    <g id="minute-hand-group" class="cursor-pointer">
+                        <line x1="200" y1="200" x2="200" y2="60" id="minute-hand" class="stroke-indigo-400 stroke-[6px]" stroke-linecap="round" />
+                        <!-- Minute Drag Handle Target -->
+                        <circle cx="200" cy="60" r="14" id="minute-handle" class="fill-indigo-400/20 stroke-indigo-400 stroke-2 opacity-0 hover:opacity-100 transition-opacity duration-200" />
+                    </g>
+
+                    <!-- Jarum Detik (Second Hand - Hanya aktif di waktu nyata) -->
+                    <line x1="200" y1="220" x2="200" y2="50" id="second-hand" class="stroke-rose-500 stroke-[2px]" stroke-linecap="round" />
+
+                    <!-- Center Cap Pin -->
+                    <circle cx="200" cy="200" r="5" class="fill-white" />
+                </svg>
+            </div>
+
+            <!-- AMPM / Time Segment Indicator inside Card -->
+            <div class="mt-8 flex gap-6 items-center">
+                <div class="flex gap-1.5" id="ampm-toggle-container">
+                    <button id="btn-am" onclick="setAMPM('AM')" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200">AM</button>
+                    <button id="btn-pm" onclick="setAMPM('PM')" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200">PM</button>
+                </div>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <!-- Time segment description e.g. "Pagi Hari" -->
+                <div id="day-segment" class="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                    <i class="fa-solid fa-sun text-amber-500"></i> Pagi Hari
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Controls and Stats -->
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            
+            <!-- Digital Time Display -->
+            <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Waktu Digital</h3>
+                <div class="flex items-baseline justify-between">
+                    <div id="digital-time" class="tech-font text-5xl sm:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 drop-shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                        00:00:00
+                    </div>
+                    <div id="ampm-badge" class="px-2.5 py-1 rounded bg-slate-800 text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        AM
+                    </div>
+                </div>
+                
+                <!-- Bahasa Indonesia Translator -->
+                <div class="mt-5 pt-5 border-t border-slate-800/80">
+                    <span class="text-xs text-slate-500 block mb-1">Pengucapan Bahasa Indonesia:</span>
+                    <p id="indo-translation" class="text-sm font-semibold text-slate-300 italic">
+                        "Jam dua belas tepat"
+                    </p>
+                </div>
+            </div>
+
+            <!-- Challenge Box / Game Mode Panel -->
+            <div id="challenge-panel" class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-fire-flame-curved"></i> Ruang Tantangan
+                    </h3>
+                    <div class="flex items-center gap-2 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold">Skor:</span>
+                        <span id="score-val" class="text-xs font-bold text-emerald-400 tech-font">0</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-5 mb-5 relative overflow-hidden">
+                    <span class="text-[10px] text-slate-500 uppercase block mb-1">Misi Anda:</span>
+                    <p class="text-sm font-medium text-slate-300">
+                        Atur jam analog hingga menunjukkan pukul:
+                    </p>
+                    <div id="challenge-target" class="tech-font text-3xl font-bold text-amber-400 mt-2 tracking-wider flex items-center gap-2">
+                        <i class="fa-regular fa-clock text-xl animate-pulse"></i> --:--
+                    </div>
+                </div>
+
+                <!-- Action Button inside challenge -->
+                <div class="flex gap-3">
+                    <button id="btn-submit-answer" onclick="checkChallengeAnswer()" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 hover:opacity-95 active:scale-95 transition-all">
+                        Verifikasi Jawaban
+                    </button>
+                    <button id="btn-skip-challenge" onclick="generateChallenge()" class="px-4 py-3 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-200 text-sm font-semibold transition-colors">
+                        Lewati
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Education / Cheat Sheet -->
+            <div class="bg-slate-900/30 border border-slate-800/50 rounded-2xl p-6">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-400"></i> Panduan Membaca Jam (Bahasa)
+                </h3>
+                
+                <div class="space-y-3.5 text-sm">
+                    <div class="flex justify-between items-start gap-4">
+                        <span class="text-slate-400 text-xs">Menit :15</span>
+                        <span class="text-slate-300 font-medium text-right text-xs">Disebut <strong class="text-cyan-400">"Lewat Seperempat"</strong></span>
+                    </div>
+                    <div class="h-px bg-slate-800/50"></div>
+                    <div class="flex justify-between items-start gap-4">
+                        <span class="text-slate-400 text-xs">Menit :30</span>
+                        <span class="text-slate-300 font-medium text-right text-xs">Disebut <strong class="text-cyan-400">"Setengah [Jam Berikutnya]"</strong></span>
+                    </div>
+                    <div class="h-px bg-slate-800/50"></div>
+                    <div class="flex justify-between items-start gap-4">
+                        <span class="text-slate-400 text-xs">Menit :45</span>
+                        <span class="text-slate-300 font-medium text-right text-xs">Disebut <strong class="text-cyan-400">"Kurang Seperempat [Jam Berikutnya]"</strong></span>
+                    </div>
+                    <div class="h-px bg-slate-800/50"></div>
+                    <div class="flex justify-between items-start gap-4">
+                        <span class="text-slate-400 text-xs">AM vs PM</span>
+                        <span class="text-slate-300 font-medium text-right text-xs">AM (00:00 - 11:59), PM (12:00 - 23:59)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Effects / Interactive Controls Box -->
+            <div class="flex items-center justify-between p-4 bg-slate-900/40 rounded-xl border border-slate-800/80">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-volume-high text-cyan-400"></i>
+                    <span class="text-xs text-slate-300 font-medium">Efek Suara Tik-Tok</span>
+                </div>
+                <button id="btn-sound-toggle" onclick="toggleSound()" class="w-12 h-6 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center p-0.5 transition-all duration-300">
+                    <div id="sound-indicator" class="w-5 h-5 rounded-full bg-cyan-400 translate-x-5 transition-transform duration-300"></div>
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Custom Toast / Modal Overlay -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-500 scale-0 opacity-0 z-50 max-w-sm w-[90%]">
+        <i id="toast-icon" class="text-2xl"></i>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm"></h4>
+            <p id="toast-msg" class="text-xs text-slate-300 mt-0.5"></p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/50 bg-slate-950/80 px-6 py-4 text-center text-xs text-slate-500">
+        <p>&copy; 2026 Created by Harry</p>
+    </footer>
+
+    <script>
+        // --- State Variables ---
+        let currentHour = 10;      // 0 - 23 (Format 24 Jam internal)
+        let currentMinute = 10;    // 0 - 59
+        let currentSecond = 0;     // 0 - 59
+        let isAM = true;
+        let isSoundEnabled = true;
+        let simulatorMode = 'free'; // 'free', 'realtime', 'challenge'
+        
+        // Game variables
+        let challengeHour = 0;     // 1 - 12
+        let challengeMinute = 0;   // 0 - 55
+        let challengePeriod = "AM"; // AM or PM
+        let userScore = 0;
+
+        // Interaction helper variables
+        const clockCenter = { x: 200, y: 200 };
+        let activeHand = null; // 'hour' or 'minute'
+        let isDragging = false;
+        let realtimeTimer = null;
+
+        // Sound Synthesis setup (Web Audio API)
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            drawClockMarkings();
+            switchMode('free');
+            updateDisplay();
+            
+            // Set up dragging listeners for Mouse
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+
+            // Set up dragging listeners for Touch
+            window.addEventListener('touchmove', handleDragMove, { passive: false });
+            window.addEventListener('touchend', handleDragEnd);
+
+            // Bind click & drag handlers on SVG elements
+            document.getElementById('hour-hand-group').addEventListener('mousedown', (e) => startDrag(e, 'hour'));
+            document.getElementById('hour-hand-group').addEventListener('touchstart', (e) => startDrag(e, 'hour'), { passive: false });
+
+            document.getElementById('minute-hand-group').addEventListener('mousedown', (e) => startDrag(e, 'minute'));
+            document.getElementById('minute-hand-group').addEventListener('touchstart', (e) => startDrag(e, 'minute'), { passive: false });
+        };
+
+        // --- DRAW CLOCK FACE (SVG Generator) ---
+        function drawClockMarkings() {
+            const ticksGroup = document.getElementById('ticks');
+            const labelsGroup = document.getElementById('hour-labels');
+            ticksGroup.innerHTML = '';
+            labelsGroup.innerHTML = '';
+
+            for (let i = 0; i < 60; i++) {
+                const angle = (i * 6) * Math.PI / 180;
+                const cos = Math.cos(angle - Math.PI / 2);
+                const sin = Math.sin(angle - Math.PI / 2);
+                
+                // Draw ticks
+                let tickLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                let rStart = i % 5 === 0 ? 175 : 185;
+                let strokeColor = i % 5 === 0 ? "#475569" : "#334155";
+                let strokeWidth = i % 5 === 0 ? 3 : 1.5;
+
+                tickLine.setAttribute("x1", 200 + rStart * cos);
+                tickLine.setAttribute("y1", 200 + rStart * sin);
+                tickLine.setAttribute("x2", 200 + 195 * cos);
+                tickLine.setAttribute("y2", 200 + 195 * sin);
+                tickLine.setAttribute("class", `stroke-[${strokeWidth}px]`);
+                tickLine.setAttribute("stroke", strokeColor);
+                ticksGroup.appendChild(tickLine);
+
+                // Draw hour numbers
+                if (i % 5 === 0) {
+                    const hourVal = i / 5 === 0 ? 12 : i / 5;
+                    const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    const rText = 150;
+                    labelText.setAttribute("x", 200 + rText * cos);
+                    labelText.setAttribute("y", 200 + rText * sin + 6); // Offset Y untuk alignment
+                    labelText.setAttribute("text-anchor", "middle");
+                    labelText.textContent = hourVal;
+                    
+                    // Special styling for 12, 3, 6, 9
+                    if (hourVal % 3 === 0) {
+                        labelText.setAttribute("class", "fill-cyan-400 font-bold text-xl");
+                    } else {
+                        labelText.setAttribute("class", "fill-slate-500 font-medium text-base");
+                    }
+                    labelsGroup.appendChild(labelText);
+                }
+            }
+        }
+
+        // --- Efek Suara Tik-Tok & Notifikasi via Web Audio API ---
+        function playTickSound() {
+            if (!isSoundEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch(e) {}
+        }
+
+        function playSuccessSound() {
+            if (!isSoundEnabled) return;
+            initAudio();
+            try {
+                const now = audioCtx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.1 + 0.3);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.45);
+                });
+            } catch(e) {}
+        }
+
+        function playErrorSound() {
+            if (!isSoundEnabled) return;
+            initAudio();
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } catch(e) {}
+        }
+
+        // --- Logika Putar/Drag Jarum Jam ---
+        function startDrag(e, handType) {
+            if (simulatorMode === 'realtime') return;
+            e.preventDefault();
+            initAudio();
+            activeHand = handType;
+            isDragging = true;
+            
+            // Berikan highlight visual pada jarum aktif
+            document.getElementById(`${handType}-hand`).classList.add('stroke-amber-400');
+        }
+
+        function handleDragMove(e) {
+            if (!isDragging || !activeHand) return;
+            e.preventDefault();
+
+            const svgRect = document.getElementById('analog-clock').getBoundingClientRect();
+            let pointerX = 0;
+            let pointerY = 0;
+
+            if (e.touches && e.touches.length > 0) {
+                pointerX = e.touches[0].clientX - svgRect.left;
+                pointerY = e.touches[0].clientY - svgRect.top;
+            } else {
+                pointerX = e.clientX - svgRect.left;
+                pointerY = e.clientY - svgRect.top;
+            }
+
+            // Normalisasi koordinat ke dimensi SVG (0-400)
+            const relativeX = (pointerX / svgRect.width) * 400 - 200;
+            const relativeY = (pointerY / svgRect.height) * 400 - 200;
+
+            // Dapatkan sudut lingkaran dalam derajat (Mulai dari jam 12 / sumbu Y-negatif)
+            let angleRad = Math.atan2(relativeY, relativeX);
+            let angleDeg = angleRad * (180 / Math.PI) + 90;
+            if (angleDeg < 0) angleDeg += 360;
+
+            if (activeHand === 'minute') {
+                // Pembulatan rotasi jarum menit per menit (step 6 derajat)
+                let roundedMin = Math.round(angleDeg / 6) % 60;
+                if (roundedMin !== currentMinute) {
+                    currentMinute = roundedMin;
+                    playTickSound();
+                    updateDisplay();
+                }
+            } else if (activeHand === 'hour') {
+                // Pembulatan jam (setiap 30 derajat melambangkan 1 jam)
+                let hourAngleFloat = angleDeg / 30;
+                let normalizedHour = Math.floor(hourAngleFloat);
+                if (normalizedHour === 0) normalizedHour = 12;
+
+                let resolvedHour = normalizedHour;
+                if (!isAM) {
+                    resolvedHour = normalizedHour === 12 ? 12 : normalizedHour + 12;
+                } else {
+                    resolvedHour = normalizedHour === 12 ? 0 : normalizedHour;
+                }
+
+                if (resolvedHour !== currentHour) {
+                    currentHour = resolvedHour;
+                    playTickSound();
+                    updateDisplay();
+                }
+            }
+        }
+
+        function handleDragEnd() {
+            if (!isDragging) return;
+            
+            if (activeHand) {
+                document.getElementById(`${activeHand}-hand`).classList.remove('stroke-amber-400');
+            }
+            
+            isDragging = false;
+            activeHand = null;
+        }
+
+        // --- SINKRONISASI TAMPILAN DIGITAL & ANALOG ---
+        function updateDisplay() {
+            isAM = currentHour < 12;
+
+            // 1. Update Sudut Rotasi Jarum Jam Analog
+            const minuteAngle = currentMinute * 6;
+            // Jarum jam bergeser proporsional berdasarkan jalannya menit saat ini
+            const hourBaseAngle = (currentHour % 12) * 30;
+            const hourProportionalAngle = currentMinute * 0.5;
+            const hourAngle = hourBaseAngle + hourProportionalAngle;
+
+            document.getElementById('minute-hand').setAttribute('transform', `rotate(${minuteAngle} 200 200)`);
+            document.getElementById('hour-hand').setAttribute('transform', `rotate(${hourAngle} 200 200)`);
+            
+            if (simulatorMode === 'realtime') {
+                document.getElementById('second-hand').style.display = 'block';
+                const secondAngle = currentSecond * 6;
+                document.getElementById('second-hand').setAttribute('transform', `rotate(${secondAngle} 200 200)`);
+            } else {
+                document.getElementById('second-hand').style.display = 'none';
+            }
+
+            // 2. Format Digital panel
+            const formattedHour = String(currentHour).padStart(2, '0');
+            const formattedMin = String(currentMinute).padStart(2, '0');
+            const formattedSec = String(currentSecond).padStart(2, '0');
+            
+            document.getElementById('digital-time').textContent = 
+                simulatorMode === 'realtime' 
+                ? `${formattedHour}:${formattedMin}:${formattedSec}` 
+                : `${formattedHour}:${formattedMin}`;
+
+            const ampmText = isAM ? "AM" : "PM";
+            document.getElementById('ampm-badge').textContent = ampmText;
+
+            // Sinergi warna Tombol AM/PM
+            if (isAM) {
+                document.getElementById('btn-am').className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-950 border border-cyan-500/30 text-cyan-400";
+                document.getElementById('btn-pm').className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-950 border border-slate-800 text-slate-500";
+            } else {
+                document.getElementById('btn-am').className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-950 border border-slate-800 text-slate-500";
+                document.getElementById('btn-pm').className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-950 border border-indigo-500/30 text-indigo-400";
+            }
+
+            // Atur Label Penunjuk Segmen Hari
+            updateDaySegmentText();
+
+            // 3. Update Penerjemah Pelafalan Indonesia
+            document.getElementById('indo-translation').textContent = `"${translateTimeToIndonesian()}"`;
+        }
+
+        // Translasi struktur jam ke logat pengucapan Bahasa Indonesia
+        function translateTimeToIndonesian() {
+            const numWords = ["dua belas", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas", "dua belas"];
+            
+            let displayHour = currentHour % 12;
+            if (displayHour === 0) displayHour = 12;
+
+            let nextHour = (currentHour + 1) % 12;
+            if (nextHour === 0) nextHour = 12;
+
+            let desc = "";
+
+            if (currentMinute === 0) {
+                desc = `Pukul ${numWords[displayHour]} tepat`;
+            } else if (currentMinute === 15) {
+                desc = `Pukul ${numWords[displayHour]} lewat seperempat`;
+            } else if (currentMinute > 0 && currentMinute < 30) {
+                desc = `Pukul ${numWords[displayHour]} lewat ${currentMinute} menit`;
+            } else if (currentMinute === 30) {
+                desc = `Setengah ${numWords[nextHour]}`;
+            } else if (currentMinute === 45) {
+                desc = `Kurang seperempat pukul ${numWords[nextHour]}`;
+            } else if (currentMinute > 30) {
+                const minDiff = 60 - currentMinute;
+                desc = `Pukul ${numWords[nextHour]} kurang ${minDiff} menit`;
+            }
+
+            let period = "";
+            if (currentHour >= 0 && currentHour < 4) period = "dini hari";
+            else if (currentHour >= 4 && currentHour < 10) period = "pagi";
+            else if (currentHour >= 10 && currentHour < 15) period = "siang";
+            else if (currentHour >= 15 && currentHour < 18) period = "sore";
+            else period = "malam";
+
+            return `${desc} ${period}`;
+        }
+
+        function updateDaySegmentText() {
+            const iconEl = document.querySelector('#day-segment i');
+            const textEl = document.getElementById('day-segment');
+            
+            let segmentStr = "";
+            if (currentHour >= 4 && currentHour < 11) {
+                iconEl.className = "fa-solid fa-sun text-amber-400";
+                segmentStr = "Pagi Hari";
+            } else if (currentHour >= 11 && currentHour < 15) {
+                iconEl.className = "fa-solid fa-cloud-sun text-yellow-300";
+                segmentStr = "Siang Hari";
+            } else if (currentHour >= 15 && currentHour < 18) {
+                iconEl.className = "fa-solid fa-wind text-indigo-300";
+                segmentStr = "Sore Hari";
+            } else {
+                iconEl.className = "fa-solid fa-moon text-blue-400";
+                segmentStr = "Malam Hari";
+            }
+            
+            textEl.innerHTML = '';
+            textEl.appendChild(iconEl);
+            textEl.appendChild(document.createTextNode(" " + segmentStr));
+        }
+
+        function setAMPM(period) {
+            if (simulatorMode === 'realtime') return;
+            initAudio();
+            if (period === 'AM' && currentHour >= 12) {
+                currentHour -= 12;
+            } else if (period === 'PM' && currentHour < 12) {
+                currentHour += 12;
+            }
+            updateDisplay();
+        }
+
+        // --- MANAJEMEN MODE (REALTIME, FREE ROTATE, CHALLENGE) ---
+        function switchMode(mode) {
+            simulatorMode = mode;
+            clearInterval(realtimeTimer);
+            initAudio();
+
+            // Sinergi Class Styles untuk Mode buttons
+            const btnFree = document.getElementById('btn-mode-free');
+            const btnReal = document.getElementById('btn-mode-realtime');
+            const btnChal = document.getElementById('btn-mode-challenge');
+
+            const inactiveStyle = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-slate-200";
+            const activeStyleCyan = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/10";
+            const activeStyleIndigo = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/10";
+            const activeStyleAmber = "px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/10";
+
+            btnFree.className = inactiveStyle;
+            btnReal.className = inactiveStyle;
+            btnChal.className = inactiveStyle;
+
+            const dragHint = document.getElementById('drag-hint');
+            const challengePanel = document.getElementById('challenge-panel');
+            const ampmContainer = document.getElementById('ampm-toggle-container');
+
+            if (mode === 'free') {
+                btnFree.className = activeStyleCyan;
+                dragHint.classList.remove('hidden');
+                challengePanel.classList.add('hidden');
+                ampmContainer.classList.remove('opacity-50', 'pointer-events-none');
+            } else if (mode === 'realtime') {
+                btnReal.className = activeStyleIndigo;
+                dragHint.classList.add('hidden');
+                challengePanel.classList.add('hidden');
+                ampmContainer.classList.add('opacity-50', 'pointer-events-none');
+                
+                // Mulai looping sinkronisasi waktu nyata komputer
+                syncToRealtime();
+                realtimeTimer = setInterval(syncToRealtime, 1000);
+            } else if (mode === 'challenge') {
+                btnChal.className = activeStyleAmber;
+                dragHint.classList.remove('hidden');
+                challengePanel.classList.remove('hidden');
+                ampmContainer.classList.remove('opacity-50', 'pointer-events-none');
+                
+                // Siapkan tantangan awal
+                generateChallenge();
+            }
+
+            updateDisplay();
+        }
+
+        function syncToRealtime() {
+            const d = new Date();
+            currentHour = d.getHours();
+            currentMinute = d.getMinutes();
+            currentSecond = d.getSeconds();
+            updateDisplay();
+        }
+
+        // --- LOGIKA MODUL TANTANGAN (CHALLENGE GAME) ---
+        function generateChallenge() {
+            // Jam target antara 1 s.d. 12
+            challengeHour = Math.floor(Math.random() * 12) + 1;
+            // Menit kelipatan 5 agar bersahabat dengan visual jam analog
+            challengeMinute = Math.floor(Math.random() * 12) * 5;
+            challengePeriod = Math.random() > 0.5 ? "AM" : "PM";
+
+            let displayPeriodText = "";
+            if (challengePeriod === "AM") {
+                displayPeriodText = challengeHour < 4 ? "Dini Hari" : "Pagi";
+            } else {
+                displayPeriodText = (challengeHour >= 12 || challengeHour < 3) ? "Siang" : (challengeHour >= 3 && challengeHour < 6) ? "Sore" : "Malam";
+            }
+
+            const formattedChallengeHour = String(challengeHour).padStart(2, '0');
+            const formattedChallengeMin = String(challengeMinute).padStart(2, '0');
+
+            document.getElementById('challenge-target').innerHTML = `
+                <i class="fa-regular fa-clock text-xl text-amber-400"></i> ${formattedChallengeHour}:${formattedChallengeMin} 
+                <span class="text-sm font-semibold text-slate-400">(${displayPeriodText})</span>
+            `;
+        }
+
+        function checkChallengeAnswer() {
+            // Ubah internal currentHour (0-23) ke format 12 jam untuk validasi AM/PM
+            let calculated12Hour = currentHour % 12;
+            if (calculated12Hour === 0) calculated12Hour = 12;
+            
+            const calculatedPeriod = currentHour < 12 ? "AM" : "PM";
+
+            const isHourMatch = calculated12Hour === challengeHour;
+            const isMinuteMatch = currentMinute === challengeMinute;
+            const isPeriodMatch = calculatedPeriod === challengePeriod;
+
+            if (isHourMatch && isMinuteMatch && isPeriodMatch) {
+                // Jawaban Benar
+                userScore += 10;
+                document.getElementById('score-val').textContent = userScore;
+                playSuccessSound();
+                showToast(
+                    "Berhasil!", 
+                    "Sempurna! Anda berhasil memposisikan jam dengan sangat tepat.", 
+                    true
+                );
+                // Ganti misi secara otomatis dalam jeda 2 detik
+                setTimeout(generateChallenge, 2000);
+            } else {
+                // Jawaban Salah
+                playErrorSound();
+                let errMsg = "Waktu yang Anda tunjukkan masih kurang tepat. ";
+                if (!isPeriodMatch) {
+                    errMsg += "Periksa kembali status AM/PM Anda.";
+                } else if (!isHourMatch) {
+                    errMsg += "Setel letak jarum jam Anda dengan benar.";
+                } else {
+                    errMsg += "Setel letak jarum menit Anda lebih teliti.";
+                }
+                showToast("Salah", errMsg, false);
+            }
+        }
+
+        // --- SISTEM NOTIFIKASI TOAST CUSTOM (No-Alerts) ---
+        function showToast(title, message, isSuccess) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const titleEl = document.getElementById('toast-title');
+            const msgEl = document.getElementById('toast-msg');
+
+            // Set up visual styles
+            if (isSuccess) {
+                toast.className = "fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-500 scale-100 opacity-100 z-50 max-w-sm w-[90%] bg-gradient-to-r from-emerald-950 to-slate-950 border border-emerald-500/50 text-emerald-400";
+                icon.className = "fa-solid fa-circle-check text-2xl text-emerald-400";
+            } else {
+                toast.className = "fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-500 scale-100 opacity-100 z-50 max-w-sm w-[90%] bg-gradient-to-r from-rose-950 to-slate-950 border border-rose-500/50 text-rose-400";
+                icon.className = "fa-solid fa-triangle-exclamation text-2xl text-rose-400";
+            }
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            // Tutup setelah beberapa detik
+            setTimeout(() => {
+                toast.className = "fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-500 scale-0 opacity-0 z-50 max-w-sm w-[90%]";
+            }, 4000);
+        }
+
+        // --- TOGGLE SUARA ---
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const indicator = document.getElementById('sound-indicator');
+            const button = document.getElementById('btn-sound-toggle');
+
+            if (isSoundEnabled) {
+                indicator.className = "w-5 h-5 rounded-full bg-cyan-400 translate-x-5 transition-transform duration-300";
+                button.className = "w-12 h-6 rounded-full bg-cyan-500/20 border border-cyan-500/50 flex items-center p-0.5 transition-all duration-300";
+                initAudio();
+                playTickSound();
+            } else {
+                indicator.className = "w-5 h-5 rounded-full bg-slate-500 translate-x-0 transition-transform duration-300";
+                button.className = "w-12 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center p-0.5 transition-all duration-300";
+            }
+        }
+    </script>
+</body>
+</html>

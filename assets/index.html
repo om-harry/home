@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portofolio Simulasi Interaktif</title>
+  
+  <style>
+    /* 1. Variabel Warna & Pengaturan Dasar 🎨 */
+    :root {
+      --bg-color: #0f172a;        /* Latar belakang utama (Slate Gelap) */
+      --card-bg: #1e293b;         /* Latar belakang kartu */
+      --text-primary: #f8fafc;    /* Warna teks utama */
+      --text-secondary: #94a3b8;  /* Warna teks sekunder */
+      --accent-color: #38bdf8;    /* Warna aksen (Biru Neon) */
+      --accent-hover: #0284c7;    /* Warna aksen saat kursor di atasnya */
+      --tag-bg: #334155;          /* Latar label teknologi */
+    }
+
+    /* Pengaturan Efek Scroll Halus */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    /* Container Utama */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* 2. Menu Navigasi Garis Tiga (Hamburger Menu) 🍔 */
+    .menu-toggle {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1000;
+      background-color: var(--card-bg);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .menu-toggle span {
+      width: 22px;
+      height: 2px;
+      background-color: var(--text-primary);
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+
+    /* Tombol Kontrol Suara (Melayang di Pojok Kanan Atas dengan SVG) 🔊 */
+    .audio-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      background-color: var(--accent-color); /* Warna aksen cerah */
+      color: #0f172a;                        /* Warna ikon (gelap agar kontras) */
+      border: none;
+      border-radius: 8px;
+      width: 45px;
+      height: 45px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6); /* Efek cahaya neon */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .audio-toggle:hover {
+      transform: scale(1.08);
+      background-color: var(--accent-hover);
+    }
+
+    /* Panel Sidebar Daftar Isi 📜 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -280px; /* Sembunyi di luar layar */
+      width: 260px;
+      height: 100%;
+      background-color: var(--card-bg);
+      border-right: 1px solid #334155;
+      z-index: 1002;
+      transition: left 0.3s ease;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .sidebar.active {
+      left: 0; /* Muncul menggeser ke dalam layar */
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      color: var(--accent-color);
+      font-size: 1.2rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.8rem;
+      cursor: pointer;
+    }
+
+    .sidebar-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar-links li {
+      margin-bottom: 1rem;
+    }
+
+    .sidebar-links a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 1rem;
+      display: block;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .sidebar-links a:hover {
+      background-color: var(--tag-bg);
+      color: var(--accent-color);
+    }
+
+    /* Overlay Latar Belakang Gelap */
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .menu-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* 3. Hero Section (Prolog + Kartun) 🧑‍💻 */
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+      background-color: var(--card-bg);
+      padding: 2.5rem;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      margin-bottom: 3rem;
+      margin-top: 2.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      
+      /* Animasi Fade-In Hero */
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out forwards;
+      animation-delay: 0.1s;
+    }
+
+    .hero-text {
+      flex: 1;
+    }
+
+    .hero-text h1 {
+      font-size: 2.2rem;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Efek Ketik Per Huruf untuk Assalamu'alaikum ⌨️ */
+    .typing-text {
+      display: inline-block;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 3px solid var(--accent-color); /* Kursor berkedip */
+      vertical-align: bottom;
+      animation: 
+        typing 2.5s steps(17, end),
+        blink-caret 0.75s step-end infinite;
+    }
+
+    /* Animasi pergerakan ketik */
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+
+    /* Animasi kursor kedip */
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: var(--accent-color); }
+    }
+
+    .hero-text .highlight {
+      color: var(--accent-color);
+    }
+
+    .hero-text p {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+
+    .hero-avatar {
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .hero-avatar img {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid var(--accent-color);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      animation: pulseGlow 1.2s infinite alternate;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+      }
+      100% {
+        box-shadow: 0 0 60px rgba(56, 189, 248, 0.9);
+      }
+    }
+
+    /* Judul Bagian Galeri */
+    .section-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--accent-color);
+      padding-left: 0.75rem;
+    }
+
+    /* 4. Grid Kartu 📐 */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    /* 5. Desain Kartu & Efek Hover 🗂️ */
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 1px solid #334155;
+      
+      /* Animasi Fade-In Kartu */
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out forwards;
+    }
+
+    /* Efek kartu terangkat saat diarahkan kursor */
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 20px -5px rgba(56, 189, 248, 0.2);
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .card-content h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-content p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* 6. Label Teknologi 🏷️ */
+    .tags {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem 0 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background-color: var(--tag-bg);
+      color: var(--accent-color);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* 7. Tombol Aksi 🔗 */
+    .btn {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      background-color: var(--accent-color);
+      color: #0f172a;
+      padding: 0.75rem 0;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      box-sizing: border-box;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+      color: #ffffff;
+    }
+
+    /* 8. Keyframe Animasi & Jeda Berurutan 🌟 */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Memberikan jeda muncul antar kartu */
+    .portfolio-grid .card:nth-child(1) { animation-delay: 0.3s; }
+    .portfolio-grid .card:nth-child(2) { animation-delay: 0.5s; }
+    .portfolio-grid .card:nth-child(3) { animation-delay: 0.7s; }
+	.portfolio-grid .card:nth-child(4) { animation-delay: 1s; }
+
+    /* Responsif untuk Layar HP 📱 */
+    @media (max-width: 768px) {
+      .hero {
+        flex-direction: column-reverse;
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .hero-avatar img {
+        width: 140px;
+        height: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tombol Hamburger Menu (Garis 3) 🍔 -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Buka Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <!-- Tombol Kontrol Suara dengan Ikon SVG Awal (Speaker Mati) 🔇 -->
+  <button class="audio-toggle" id="audioBtn" aria-label="Putar Suara">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+  </button>
+
+  <!-- Layar Gelap Latar Belakang (Overlay) -->
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <!-- Panel Sidebar Daftar Isi 📜 -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>Daftar Isi 📌</h3>
+      <button class="close-btn" id="closeBtn">&times;</button>
+    </div>
+    <ul class="sidebar-links">
+      <li><a href="index.html" class="nav-link">🏠 Home</a></li>
+  <li><a href="https://om-harry.github.io/3dtatasurya/" class="nav-link">🪐 Simulasi 3D Tata Surya</a></li>
+  <li><a href="https://om-harry.github.io/intibumi3d/" class="nav-link">🌍 Simulasi Inti Bumi 3D</a></li>
+  <li><a href="https://om-harry.github.io/mengenaltatasurya/" class="nav-link">🌌 Mengenal Tata Surya</a></li>
+  <li><a href="simulasi4.html" class="nav-link">🚀 Simulasi Keempat</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    
+    <!-- Hero Section: Prolog & Kartun 🧑‍💻 -->
+    <header class="hero">
+      <div class="hero-text">
+        <!-- Teks dengan Efek Mengetik -->
+        <h1><span class="typing-text">Assalamu'alaikum. 👋</span></h1>
+        <p>Halo! Saya senang Anda berkunjung. Di sini Anda bisa menjelajahi berbagai proyek dan <span class="highlight">simulasi interaktif</span> yang telah saya kembangkan. Silakan klik salah satu kartu di bawah ini untuk mencoba aplikasinya secara langsung!</p>
+      </div>
+      <div class="hero-avatar">
+        <img src="assets/kartun-saya.png" alt="Karakter Kartun Saya">
+      </div>
+    </header>
+
+    <h2 class="section-title">Daftar Simulasi Interaktif 🚀</h2>
+
+    <!-- Grid Kartu Proyek -->
+    <main class="portfolio-grid">
+      
+      <!-- Kartu Proyek 1: Simulasi 3D Tata Surya -->
+      <div class="card" id="proyek-1">
+        <img src="assets/simulasi1.png" alt="Screenshot Simulasi Tata Surya 3D">
+        <div class="card-content">
+          <h3>Simulasi 3D Tata Surya 🪐</h3>
+          <p>Visualisasi interaktif 3D gerakan dan susunan planet dalam sistem tata surya.</p>
+          <a href="https://om-harry.github.io/3dtatasurya/" class="btn">Coba Simulasi 🚀</a>
+        </div>
+      </div>
+
+      <!-- Kartu Proyek 2: Simulasi Inti Bumi 3D -->
+      <div class="card" id="proyek-2">
+        <img src="assets/simulasi2.png" alt="Screenshot Simulasi Inti Bumi 3D">
+        <div class="card-content">
+          <h3>Simulasi Inti Bumi 3D 🌍</h3>
+          <p>Visualisasi interaktif 3D struktur dan lapisan bagian dalam bumi.</p>
+          <a href="https://om-harry.github.io/intibumi3d/" class="btn">Coba Simulasi 🚀</a>
+        </div>
+      </div>
+
+      <!-- Kartu Proyek 3: Simulasi Mengenal Tata Surya -->
+      <div class="card" id="proyek-3">
+        <img src="assets/simulasi3.png" alt="Screenshot Simulasi Mengenal Tata Surya">
+        <div class="card-content">
+          <h3>Mengenal Tata Surya 🌌</h3>
+          <p>Media pembelajaran interaktif untuk mengenal planet-planet dan benda langit di tata surya.</p>
+          <a href="https://om-harry.github.io/mengenaltatasurya/" class="btn">Coba Simulasi 🚀</a>
+        </div>
+      </div>
+	  
+	  <!-- Kartu Proyek 4: Simulasi Keempat -->
+<div class="card" id="proyek-4">
+  <img src="assets/simulasi4.png" alt="Screenshot Simulasi 4">
+  <div class="card-content">
+    <h3>Simulasi Keempat 🚀</h3>
+    <p>Deskripsi singkat mengenai simulasi baru yang Anda buat.</p>
+    <!-- Tautan langsung ke berkas simulasi4.html -->
+    <a href="simulasi4.html" class="btn">Coba Simulasi 🚀</a>
+  </div>
+</div>
+
+    </main>
+
+  </div>
+
+  <!-- JavaScript Interaktivitas Menu & Pemutaran Suara ⚙️ -->
+  <script>
+    // 1. Logika Navigasi Sidebar 📜
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const menuOverlay = document.getElementById('menuOverlay');
+    const closeBtn = document.getElementById('closeBtn');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function openMenu() {
+      sidebar.classList.add('active');
+      menuOverlay.classList.add('active');
+    }
+
+    function closeMenu() {
+      sidebar.classList.remove('active');
+      menuOverlay.classList.remove('active');
+    }
+
+    menuToggle.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    menuOverlay.addEventListener('click', closeMenu);
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    // 2. Kode SVG Ikon Audio 🖼️
+    const iconOn = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+    const iconMute = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+
+    // 3. Logika Pemutaran Suara Salam 🔊
+    const audioSalam = new Audio('assets/salam.wav');
+    const audioBtn = document.getElementById('audioBtn');
+
+    // Menangani klik tombol audio
+    audioBtn.addEventListener('click', () => {
+      if (audioSalam.paused) {
+        audioSalam.play();
+        audioBtn.innerHTML = iconOn;   // Ganti ke gambar speaker menyala
+      } else {
+        audioSalam.pause();
+        audioBtn.innerHTML = iconMute; // Ganti ke gambar speaker mati
+      }
+    });
+
+    // Mengembalikan ikon ke bentuk mute saat suara selesai diputar
+    audioSalam.addEventListener('ended', () => {
+      audioBtn.innerHTML = iconMute;
+    });
+  </script>
+
+</body>
+</html>

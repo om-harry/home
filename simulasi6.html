@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomi Luar Mata 3D Interaktif</title>
+    
+    <!-- Import Model Viewer -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        model-viewer {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Container untuk Judul di Tengah Atas 🧭 */
+.header-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Memastikan posisi benar-benar di tengah */
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Membuat isi container rata tengah */
+    gap: 10px;
+}
+
+/* Desain Judul 👁️ */
+.main-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: rgba(20, 20, 20, 0.85);
+    padding: 8px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    white-space: nowrap; /* Mencegah judul terpotong/turun baris */
+}
+
+        .btn-petunjuk {
+            background: rgba(20, 20, 20, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-petunjuk:hover {
+            background: rgba(56, 189, 248, 0.3);
+            border-color: #38bdf8;
+        }
+
+        /* 📋 Panel Pop-Up Petunjuk */
+        .panel-petunjuk {
+            position: absolute;
+            top: 110px;
+            left: 20px;
+            width: 260px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: none;
+        }
+
+        .panel-petunjuk ul {
+            margin: 8px 0 0 0;
+            padding-left: 18px;
+            line-height: 1.5;
+        }
+
+        /* 📍 Desain Titik Hotspot Utama (Dot Kecil) */
+        .hotspot-dot {
+            background: #fff;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #00d2ff;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            user-select: none;
+            padding: 0;
+        }
+
+        .hotspot-dot:hover {
+            transform: scale(1.3);
+            background: #00d2ff;
+        }
+
+        /* 📏 Desain Garis Penunjuk (Leader Line) */
+        .hotspot-line {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            width: 2px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.7);
+            transform-origin: bottom;
+            transform: translateX(-50%) scaleY(0);
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        /* 🏷️ Desain Label Teks Di Atas Garis */
+        .hotspot-label {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #ffffff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 210, 255, 0.5);
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Kelas Aktif untuk Garis & Label */
+        .hotspot-dot.active .hotspot-line {
+            transform: translateX(-50%) scaleY(1);
+        }
+
+        .hotspot-dot.active .hotspot-label {
+            opacity: 1;
+        }
+
+        /* 💬 Desain Pop-Up Info Card Deskripsi */
+        .info-card {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.9);
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+            z-index: 1000;
+        }
+
+        .info-card h3 { margin: 0 0 8px 0; color: #38bdf8; font-size: 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+        .info-card p { margin: 0; font-size: 0.9rem; line-height: 1.4; color: #e2e8f0; }
+        .close-btn { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
+        .close-btn:hover { color: #ffffff; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Header Kiri Atas -->
+    <div class="header-container">
+        <h1 class="main-title">👁️ Anatomi Luar Mata 3D</h1>
+        <button class="btn-petunjuk" id="btnPetunjuk">
+            📢 <span>Petunjuk</span>
+        </button>
+    </div>
+
+    <!-- Panel Pop-Up Petunjuk -->
+    <div class="panel-petunjuk" id="panelPetunjuk">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:#38bdf8; font-size:14px;">💡 Cara Berinteraksi</strong>
+            <button class="close-btn" id="closePetunjuk">✕</button>
+        </div>
+        <ul>
+            <li>🔵 <strong>Klik Titik Biru</strong>: Melihat nama, deskripsi, dan mendengarkan suaranya.</li>
+            <li>🖱️ <strong>Geser Layar</strong>: Memutar bola mata 3D.</li>
+            <li>🔍 <strong>Zoom</strong>: Gunakan <em>scroll</em> untuk memperbesar/memperkecil.</li>
+        </ul>
+    </div>
+
+    <!-- Komponen 3D Model Viewer -->
+    <!-- Sesuaikan src="eye.glb" atau URL Catbox jika memakai link online -->
+    <model-viewer id="eyeViewer" src="https://files.catbox.moe/srhs0a.glb" camera-controls shadow-intensity="1">
+
+        <!-- Hotspot 1: Pupil -->
+        <button class="hotspot-dot" slot="hotspot-pupil" 
+                data-position="-0.4037m 0.6765m 1.8609m" 
+                onclick="handleHotspotClick(this, '⚫ Pupil', 'Pupil adalah celah hitam di tengah iris yang melebar di tempat gelap dan mengecil di tempat terang.', 'pupil.wav')">
+            <div class="hotspot-line">
+                <div class="hotspot-label">⚫ Pupil</div>
+            </div>
+        </button>
+
+        <!-- Hotspot 2: Iris -->
+        <button class="hotspot-dot" slot="hotspot-iris" 
+                data-position="0.1691m 0.8590m 1.8175m" 
+                onclick="handleHotspotClick(this, '🌈 Iris', 'Iris adalah bagian berwarna pada mata yang mengontrol seberapa banyak cahaya yang masuk dengan mengatur ukuran pupil.', 'iris.wav')">
+            <div class="hotspot-line">
+                <div class="hotspot-label">🌈 Iris</div>
+            </div>
+        </button>
+
+        <!-- Hotspot 3: Kornea -->
+        <button class="hotspot-dot" slot="hotspot-kornea" 
+                data-position="-0.8934m 0.8106m 1.6185m" 
+                onclick="handleHotspotClick(this, '👁️ Kornea', 'Kornea adalah lapisan bening paling depan yang berfungsi melindungi mata dan membiaskan cahaya masuk ke dalam mata.', 'kornea.wav')">
+            <div class="hotspot-line">
+                <div class="hotspot-label">👁️ Kornea</div>
+            </div>
+        </button>
+
+        <!-- Hotspot 4: Sklera -->
+        <button class="hotspot-dot" slot="hotspot-sklera" 
+                data-position="-1.3697m 0.8038m 1.2496m" 
+                onclick="handleHotspotClick(this, '⚪ Sklera', 'Sklera adalah bagian putih mata yang keras dan berfungsi menjaga bentuk bola mata serta melindungi bagian dalam.', 'sklera.wav')">
+            <div class="hotspot-line">
+                <div class="hotspot-label">⚪ Sklera</div>
+            </div>
+        </button>
+
+        <!-- Hotspot 5: Pembuluh Darah Sklera -->
+        <button class="hotspot-dot" slot="hotspot-pembuluh" 
+                data-position="1.6054m 0.4685m 1.1227m" 
+                onclick="handleHotspotClick(this, '🩸 Pembuluh Darah', 'Pembuluh darah di jaringan sklera menyuplai oksigen dan nutrisi ke jaringan permukaan mata.', 'pembuluh.wav')">
+            <div class="hotspot-line">
+                <div class="hotspot-label">🩸 Pembuluh Darah</div>
+            </div>
+        </button>
+
+    </model-viewer>
+
+    <!-- Pop-up Deskripsi Teks -->
+    <div class="info-card" id="infoCard">
+        <h3>
+            <span id="partTitle">Judul Anatomi</span>
+            <button class="close-btn" onclick="closeInfo()">✕</button>
+        </h3>
+        <p id="partDesc">Deskripsi akan muncul di sini.</p>
+    </div>
+
+    <script>
+        // Variabel penampung audio .wav
+        let currentAudio = null;
+
+        // Fungsi memutar audio .wav 🔊
+        function playAudio(audioUrl) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            currentAudio = new Audio(audioUrl);
+            currentAudio.play().catch(error => {
+                console.error("Gagal memutar file audio:", error);
+            });
+        }
+
+        // Fungsi menghentikan audio 🛑
+        function stopAudio() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+        }
+
+        // Fungsi saat titik hotspot diklik 📍
+        function handleHotspotClick(element, title, desc, audioUrl) {
+            const allDots = document.querySelectorAll('.hotspot-dot');
+            allDots.forEach(dot => dot.classList.remove('active'));
+
+            element.classList.add('active');
+
+            document.getElementById('partTitle').innerText = title;
+            document.getElementById('partDesc').innerText = desc;
+            document.getElementById('infoCard').style.display = 'block';
+
+            playAudio(audioUrl);
+        }
+
+        // Tutup Info Card & Hentikan Suara ✕
+        function closeInfo() {
+            document.getElementById('infoCard').style.display = 'none';
+            stopAudio();
+
+            const allDots = document.querySelectorAll('.hotspot-dot');
+            allDots.forEach(dot => dot.classList.remove('active'));
+        }
+
+        // Event Tombol Petunjuk 📢
+        const btnPetunjuk = document.getElementById('btnPetunjuk');
+        const panelPetunjuk = document.getElementById('panelPetunjuk');
+        const closePetunjuk = document.getElementById('closePetunjuk');
+
+        if (btnPetunjuk) {
+            btnPetunjuk.addEventListener('click', () => {
+                panelPetunjuk.style.display = 'block';
+                playAudio('petunjuk.wav'); // File audio petunjuk
+            });
+        }
+
+        if (closePetunjuk) {
+            closePetunjuk.addEventListener('click', () => {
+                panelPetunjuk.style.display = 'none';
+                stopAudio();
+            });
+        }
+
+        // Menutup Info Card jika klik di area kosong 3D
+        document.getElementById('eyeViewer').addEventListener('click', (event) => {
+            if (event.target.tagName !== 'BUTTON') {
+                closeInfo();
+            }
+        });
+    </script>
+</body>
+</html>
