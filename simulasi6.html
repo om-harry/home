@@ -153,6 +153,120 @@
         .hotspot-dot.active .hotspot-label {
             opacity: 1;
         }
+		/* 2. Styling Hamburger Menu & Sidebar 🍔 */
+    .menu-toggle {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1000;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      width: 45px;
+      height: 45px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .menu-toggle span {
+      width: 22px;
+      height: 2px;
+      background-color: #ffffff;
+      border-radius: 2px;
+      transition: 0.3s;
+    }
+
+    /* Menu Overlay 🌫️ */
+    .menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1001;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .menu-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Panel Sidebar 📜 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 260px;
+      height: 100%;
+      background-color: #1e293b;
+      border-right: 1px solid #334155;
+      z-index: 1002;
+      transition: left 0.3s ease;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      color: #38bdf8;
+      font-size: 1.2rem;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.8rem;
+      cursor: pointer;
+    }
+
+    .sidebar-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar-links li {
+      margin-bottom: 1rem;
+    }
+
+    .sidebar-links a {
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 1rem;
+      display: block;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .sidebar-links a:hover,
+    .sidebar-links a.active {
+      background-color: #334155;
+      color: #38bdf8;
+    }
 
         /* 💬 Desain Pop-Up Info Card Deskripsi */
         .info-card {
@@ -176,11 +290,20 @@
         .info-card p { margin: 0; font-size: 0.9rem; line-height: 1.4; color: #e2e8f0; }
         .close-btn { background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; }
         .close-btn:hover { color: #ffffff; }
+		
 
     </style>
 </head>
 <body>
+<!-- Tombol Hamburger Menu 🍔 -->
+  <button class="menu-toggle" id="menuToggle" aria-label="Buka Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 
+  <!-- Overlay 🌫️ -->
+  <div class="menu-overlay" id="menuOverlay"></div>
     <!-- Header Kiri Atas -->
     <div class="header-container">
         <h1 class="main-title">👁️ Anatomi Luar Mata 3D</h1>
@@ -188,6 +311,22 @@
             📢 <span>Petunjuk</span>
         </button>
     </div>
+	<!-- Panel Sidebar 📜 -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>Daftar Isi 📌</h3>
+      <button class="close-btn" id="closeBtn">&times;</button>
+    </div>
+    <ul class="sidebar-links">
+      <li><a href="index.html" class="nav-link">🏠 Home</a></li>
+      <li><a href="halaman-simulasi1.html" class="nav-link">🪐 Simulasi 3D Tata Surya</a></li>
+      <li><a href="halaman-simulasi2.html" class="nav-link">🌍 Simulasi Inti Bumi 3D</a></li>
+      <li><a href="halaman-simulasi3.html" class="nav-link">🌌 Mengenal Tata Surya</a></li>
+      <li><a href="simulasi4.html" class="nav-link">🚀 Simulasi Jam Analog</a></li>
+	  <li><a href="simulasi5.html" class="nav-link active">🌌 Mengenal Tata Surya versi 3D</a></li>
+    </ul>
+  </nav>
+	
 
     <!-- Panel Pop-Up Petunjuk -->
     <div class="panel-petunjuk" id="panelPetunjuk">
@@ -305,6 +444,30 @@
 
             playAudio(audioUrl);
         }
+		// Camera Control Variables
+const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const menuOverlay = document.getElementById('menuOverlay');
+    const closeBtn = document.getElementById('closeBtn');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function openMenu() {
+      sidebar.classList.add('active');
+      menuOverlay.classList.add('active');
+    }
+
+    function closeMenu() {
+      sidebar.classList.remove('active');
+      menuOverlay.classList.remove('active');
+    }
+
+    menuToggle.addEventListener('click', openMenu);
+    closeBtn.addEventListener('click', closeMenu);
+    menuOverlay.addEventListener('click', closeMenu);
+
+    navLinks.forEach(link => {
+      link.addEventListener('click', closeMenu);
+    });
 
         // Tutup Info Card & Hentikan Suara ✕
         function closeInfo() {
